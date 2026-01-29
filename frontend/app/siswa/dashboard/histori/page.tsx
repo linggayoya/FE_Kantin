@@ -59,9 +59,31 @@ function formatIDDateTime(dateStr: string) {
 }
 
 const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
 ];
+
+// ✅ sama seperti menu page kamu: jadikan foto jadi URL yang bisa diakses browser
+function getFotoUrlHistori(foto?: string | null) {
+  if (!foto) return "";
+
+  // kalau sudah absolute
+  if (foto.startsWith("http://") || foto.startsWith("https://")) return foto;
+
+  // backend UKK biasanya simpan path relatif dari domain root
+  const origin = "https://ukk-p2.smktelkom-mlg.sch.id/";
+  return origin + foto.replace(/^\/+/, "");
+}
 
 export default function HistoriPage() {
   const router = useRouter();
@@ -94,19 +116,24 @@ export default function HistoriPage() {
     const dateParam = ym01(y, m0);
 
     try {
-      const res = await fetch(`${BASE_URL}showorderbymonthbysiswa/${dateParam}`, {
-        method: "GET",
-        headers: {
-          makerID: MAKER_ID,
-          Authorization: `Bearer ${token}`,
-          token: token, // penting untuk backend kamu
-        },
-      });
+      const res = await fetch(
+        `${BASE_URL}showorderbymonthbysiswa/${dateParam}`,
+        {
+          method: "GET",
+          headers: {
+            makerID: MAKER_ID,
+            Authorization: `Bearer ${token}`,
+            token: token, // penting untuk backend kamu
+          },
+        }
+      );
 
       const data: ApiRes | null = await res.json().catch(() => null);
 
       if (!res.ok || data?.status === false) {
-        throw new Error(data?.message ?? `Gagal load histori (HTTP ${res.status})`);
+        throw new Error(
+          data?.message ?? `Gagal load histori (HTTP ${res.status})`
+        );
       }
 
       const arr = Array.isArray(data?.data) ? data!.data : [];
@@ -121,8 +148,6 @@ export default function HistoriPage() {
           toDateSafe(b.tanggal)?.getTime() ??
           toDateSafe(b.created_at)?.getTime() ??
           0;
-
-        // terbaru dulu
         return db - da;
       });
 
@@ -141,7 +166,10 @@ export default function HistoriPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, monthIdx]);
 
-  const monthTitle = useMemo(() => `${MONTHS[monthIdx]} ${year}`, [monthIdx, year]);
+  const monthTitle = useMemo(
+    () => `${MONTHS[monthIdx]} ${year}`,
+    [monthIdx, year]
+  );
 
   return (
     <div className="space-y-6">
@@ -151,7 +179,8 @@ export default function HistoriPage() {
           <div>
             <h1 className="text-xl font-extrabold text-slate-900">Histori</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Rekap order bulanan dari endpoint <b>showorderbymonthbysiswa</b>.
+              Rekap order bulanan dari endpoint{" "}
+              <b>showorderbymonthbysiswa</b>.
             </p>
           </div>
 
@@ -253,94 +282,116 @@ export default function HistoriPage() {
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {items.map((it) => (
-            <div
-              key={it.id}
-              className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-11 w-11 overflow-hidden rounded-2xl bg-red-50 ring-1 ring-red-100">
-                    {it.foto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.foto} alt="foto" className="h-full w-full object-cover" />
-                    ) : (
-                      <Image
-                        src="/image/mage.png"
-                        alt="placeholder"
-                        fill
-                        className="object-contain p-2 opacity-40"
-                      />
-                    )}
-                  </div>
+          {items.map((it) => {
+            const fotoUrl = getFotoUrlHistori(it.foto);
 
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-extrabold text-slate-900">
-                      Order #{it.id}
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500">
-                      Tanggal:{" "}
-                      <span className="font-bold text-slate-700">
-                        {formatIDDate(it.tanggal)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <span
-                  className={[
-                    "rounded-full px-3 py-1 text-xs font-extrabold ring-1",
-                    it.status?.toLowerCase().includes("belum")
-                      ? "bg-amber-50 text-amber-700 ring-amber-200"
-                      : "bg-emerald-50 text-emerald-700 ring-emerald-200",
-                  ].join(" ")}
-                >
-                  {it.status ?? "—"}
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-2 text-xs font-semibold text-slate-600">
-                <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <div className="text-[11px] text-slate-400">Nama Siswa</div>
-                  <div className="mt-1 font-extrabold text-slate-900">{it.nama_siswa ?? "—"}</div>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                    <div className="text-[11px] text-slate-400">Dibuat</div>
-                    <div className="mt-1 font-extrabold text-slate-900">
-                      {formatIDDateTime(it.created_at)}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                    <div className="text-[11px] text-slate-400">Update</div>
-                    <div className="mt-1 font-extrabold text-slate-900">
-                      {formatIDDateTime(it.updated_at)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <div className="text-[11px] text-slate-400">Alamat</div>
-                  <div className="mt-1 font-extrabold text-slate-900">{it.alamat ?? "—"}</div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                  <div className="text-[11px] text-slate-400">Telepon</div>
-                  <div className="mt-1 font-extrabold text-slate-900">{it.telp ?? "—"}</div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-slate-800"
-                onClick={() => alert("Detail order belum dibuat (menunggu endpoint detail).")}
+            return (
+              <div
+                key={it.id}
+                className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm"
               >
-                Lihat Detail
-              </button>
-            </div>
-          ))}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-11 w-11 overflow-hidden rounded-2xl bg-red-50 ring-1 ring-red-100">
+                      {fotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={fotoUrl}
+                          alt="foto"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "/image/mage.png";
+                          }}
+                        />
+                      ) : (
+                        <Image
+                          src="/image/mage.png"
+                          alt="placeholder"
+                          fill
+                          className="object-contain p-2 opacity-40"
+                        />
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-extrabold text-slate-900">
+                        Order #{it.id}
+                      </div>
+                      <div className="text-xs font-semibold text-slate-500">
+                        Tanggal:{" "}
+                        <span className="font-bold text-slate-700">
+                          {formatIDDate(it.tanggal)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    className={[
+                      "rounded-full px-3 py-1 text-xs font-extrabold ring-1",
+                      it.status?.toLowerCase().includes("belum")
+                        ? "bg-amber-50 text-amber-700 ring-amber-200"
+                        : "bg-emerald-50 text-emerald-700 ring-emerald-200",
+                    ].join(" ")}
+                  >
+                    {it.status ?? "—"}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-2 text-xs font-semibold text-slate-600">
+                  <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                    <div className="text-[11px] text-slate-400">Nama Siswa</div>
+                    <div className="mt-1 font-extrabold text-slate-900">
+                      {it.nama_siswa ?? "—"}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                      <div className="text-[11px] text-slate-400">Dibuat</div>
+                      <div className="mt-1 font-extrabold text-slate-900">
+                        {formatIDDateTime(it.created_at)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                      <div className="text-[11px] text-slate-400">Update</div>
+                      <div className="mt-1 font-extrabold text-slate-900">
+                        {formatIDDateTime(it.updated_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                    <div className="text-[11px] text-slate-400">Alamat</div>
+                    <div className="mt-1 font-extrabold text-slate-900">
+                      {it.alamat ?? "—"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                    <div className="text-[11px] text-slate-400">Telepon</div>
+                    <div className="mt-1 font-extrabold text-slate-900">
+                      {it.telp ?? "—"}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-slate-800"
+                  onClick={() =>
+                    alert(
+                      "Detail order belum dibuat (menunggu endpoint detail)."
+                    )
+                  }
+                >
+                  Lihat Detail
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

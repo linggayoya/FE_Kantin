@@ -33,14 +33,14 @@ const cards = [
 
 // slot gambar (sementara hardcode). nanti bisa diganti data dari API/menu
 const slots = [
-  { title: "Noodle Black Beans", subtitle: "Favorit hari ini", price: "Rp 12.000", tag: "HOT", img: "/image/mage.png" },
-  { title: "Japanese Noodles", subtitle: "Pedas mantap", price: "Rp 15.000", tag: "NEW", img: "/image/mage.png" },
-  { title: "Indian Noodles", subtitle: "Gurih & legit", price: "Rp 14.000", tag: "BEST", img: "/image/mage.png" },
-  { title: "Chicken Chili", subtitle: "Paket hemat", price: "Rp 18.000", tag: "PROMO", img: "/image/mage.png" },
-  { title: "Veg Pasta", subtitle: "Sehat & enak", price: "Rp 13.000", tag: "FIT", img: "/image/mage.png" },
-  { title: "Cheese Pizza", subtitle: "Cheesy banget", price: "Rp 20.000", tag: "TOP", img: "/image/mage.png" },
-  { title: "Soft Drink", subtitle: "Dingin segar", price: "Rp 6.000", tag: "ICE", img: "/image/mage.png" },
-  { title: "Dessert", subtitle: "Manisnya pas", price: "Rp 8.000", tag: "SWEET", img: "/image/mage.png" },
+  { title: "Noodle Black Beans", subtitle: "Favorit hari ini", price: "Rp 12.000", tag: "HOT", img: "/image/a.jpeg" },
+  { title: "Tahu Bakso", subtitle: "Pedas mantap", price: "Rp 15.000", tag: "NEW", img: "/image/b.jpeg" },
+  { title: "Mie Ayam", subtitle: "Gurih & legit", price: "Rp 14.000", tag: "BEST", img: "/image/c.jpeg" },
+  { title: "Bakso Ngalam", subtitle: "Paket hemat", price: "Rp 18.000", tag: "PROMO", img: "/image/d.jpeg" },
+  { title: "Soto Mexico", subtitle: "Sehat & enak", price: "Rp 13.000", tag: "FIT", img: "/image/e.jpeg" },
+  { title: "Mie Njebew", subtitle: "Mie Njebew", price: "Rp 20.000", tag: "TOP", img: "/image/f.jpeg" },
+  { title: "Geprek", subtitle: "Dingin segar", price: "Rp 6.000", tag: "BUNDLE", img: "/image/g.jpeg" },
+  { title: "Dessert", subtitle: "Manisnya pas", price: "Rp 8.000", tag: "SWEET", img: "/image/lecep.png" },
 ];
 
 export default function SiswaDashboardHome() {
@@ -101,7 +101,7 @@ export default function SiswaDashboardHome() {
           <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/image/mi.jpeg"
+              src="/image/g.jpeg"
               alt="Promo"
               className="h-[220px] w-full object-cover"
             />

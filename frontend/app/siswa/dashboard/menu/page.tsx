@@ -30,7 +30,8 @@ type MenuItem = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "https://ukk-p2.smktelkom-mlg.sch.id/api/";
+  process.env.NEXT_PUBLIC_API_URL ??
+  "https://ukk-p2.smktelkom-mlg.sch.id/api/";
 const MAKER_ID = process.env.NEXT_PUBLIC_MAKER_ID ?? "1";
 
 function joinUrl(base: string, path: string) {
@@ -77,23 +78,26 @@ function getFotoUrl(item: MenuItem) {
   const url = item.foto || item.gambar || item.image;
   if (!url) return "";
 
-  // kalau sudah absolute
   if (typeof url === "string" && url.startsWith("http")) return url;
 
-  // backend UKK biasanya simpan path relatif dari domain root
   const origin = "https://ukk-p2.smktelkom-mlg.sch.id/";
   return origin + String(url).replace(/^\/+/, "");
 }
 
 function pickList(data: any): MenuItem[] {
-  const list =
-    Array.isArray(data) ? data :
-    Array.isArray(data?.data) ? data.data :
-    Array.isArray(data?.menu) ? data.menu :
-    Array.isArray(data?.result) ? data.result :
-    Array.isArray(data?.items) ? data.items :
-    Array.isArray(data?.payload) ? data.payload :
-    [];
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.menu)
+    ? data.menu
+    : Array.isArray(data?.result)
+    ? data.result
+    : Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data?.payload)
+    ? data.payload
+    : [];
 
   return Array.isArray(list) ? (list as MenuItem[]) : [];
 }
@@ -118,7 +122,6 @@ async function postMenuSiswa(path: string, search: string) {
   const data: any = await safeJson(raw);
 
   if (!res.ok) {
-    // backend kamu kadang errornya bukan message/msg, jadi fallback raw
     throw new Error(data?.message || data?.msg || raw || `HTTP ${res.status}`);
   }
 
@@ -176,56 +179,64 @@ export default function MenuSiswaPage() {
       1
     );
 
-    // supaya pasti muncul drawer walau addItem kamu tidak auto-open
     openCart();
   }
+
+  const TabBtn = ({
+    active,
+    children,
+    onClick,
+  }: {
+    active: boolean;
+    children: React.ReactNode;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-full px-4 py-2 text-sm font-extrabold transition",
+        "ring-1 ring-inset",
+        active
+          ? "bg-red-600 text-white ring-red-600 shadow-sm"
+          : "bg-white text-slate-700 ring-slate-200 hover:bg-red-50 hover:ring-red-200",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6">
-        <h1 className="text-xl font-extrabold text-slate-900">Menu</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Pilih menu, lalu checkout lewat popup keranjang.
-        </p>
+      <div className="rounded-3xl border border-red-100 bg-white/90 backdrop-blur p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-900">Menu</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Pilih menu, lalu checkout lewat popup keranjang.
+            </p>
+          </div>
 
-        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <button
+           
+           
+        
+          >
+           
+            
+          </button>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setTab("makanan")}
-              className={[
-                "rounded-full px-4 py-2 text-sm font-semibold transition",
-                tab === "makanan"
-                  ? "bg-purple-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-700 hover:bg-purple-50",
-              ].join(" ")}
-            >
+            <TabBtn active={tab === "makanan"} onClick={() => setTab("makanan")}>
               Makanan
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTab("minuman")}
-              className={[
-                "rounded-full px-4 py-2 text-sm font-semibold transition",
-                tab === "minuman"
-                  ? "bg-purple-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-700 hover:bg-purple-50",
-              ].join(" ")}
-            >
+            </TabBtn>
+            <TabBtn active={tab === "minuman"} onClick={() => setTab("minuman")}>
               Minuman
-            </button>
-
-            {/* Cart button */}
-            <button
-              type="button"
-              onClick={openCart}
-              className="ml-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Keranjang ({totalQty})
-            </button>
+            </TabBtn>
           </div>
 
           {/* Search */}
@@ -237,12 +248,13 @@ export default function MenuSiswaPage() {
                 if (e.key === "Enter") load(search);
               }}
               placeholder='Cari menu (contoh: "rujak")...'
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 lg:w-72"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none
+              focus:border-red-400 focus:ring-4 focus:ring-red-100 lg:w-72"
             />
             <button
               type="button"
               onClick={() => load(search)}
-              className="rounded-2xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-700"
+              className="rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-red-700"
             >
               Cari
             </button>
@@ -252,7 +264,7 @@ export default function MenuSiswaPage() {
                 setSearch("");
                 load("");
               }}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 hover:bg-slate-50"
             >
               Reset
             </button>
@@ -272,7 +284,7 @@ export default function MenuSiswaPage() {
           <button
             type="button"
             onClick={() => load(search)}
-            className="mt-3 rounded-2xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700"
+            className="mt-3 rounded-2xl bg-rose-600 px-4 py-2 text-sm font-extrabold text-white hover:bg-rose-700"
           >
             Coba Lagi
           </button>
@@ -282,11 +294,11 @@ export default function MenuSiswaPage() {
       {/* Grid Menu */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 sm:col-span-2 lg:col-span-3">
+          <div className="rounded-3xl border border-red-100 bg-white p-6 text-sm text-slate-500 sm:col-span-2 lg:col-span-3">
             Memuat menu...
           </div>
         ) : rows.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 sm:col-span-2 lg:col-span-3">
+          <div className="rounded-3xl border border-red-100 bg-white p-6 text-sm text-slate-500 sm:col-span-2 lg:col-span-3">
             Tidak ada menu untuk tab <b>{tab}</b>.
           </div>
         ) : (
@@ -298,7 +310,7 @@ export default function MenuSiswaPage() {
             return (
               <div
                 key={id}
-                className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-purple-300 hover:shadow-md"
+                className="group rounded-3xl border border-red-100 bg-white p-5 transition hover:border-red-200 hover:shadow-lg"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -309,21 +321,23 @@ export default function MenuSiswaPage() {
                       Dari: <span className="font-semibold">{stanName}</span>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">
+
+                  <div className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-extrabold text-red-700 ring-1 ring-red-100">
                     {formatRupiah(it.harga)}
                   </div>
                 </div>
 
-                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+                <div className="mt-4 overflow-hidden rounded-2xl border border-red-100 bg-red-50/30">
                   {fotoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={fotoUrl}
                       alt={it.nama_makanan ?? "foto"}
-                      className="h-36 w-full object-cover"
+                      className="h-36 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                      loading="lazy"
                     />
                   ) : (
-                    <div className="flex h-36 items-center justify-center text-xs text-slate-400">
+                    <div className="flex h-36 items-center justify-center text-xs font-semibold text-slate-400">
                       Tidak ada foto
                     </div>
                   )}
@@ -336,7 +350,7 @@ export default function MenuSiswaPage() {
                 <button
                   type="button"
                   onClick={() => handlePesan(it)}
-                  className="mt-4 w-full rounded-2xl bg-purple-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-purple-700"
+                  className="mt-4 w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-red-700 active:scale-[0.99] transition"
                 >
                   Pesan
                 </button>

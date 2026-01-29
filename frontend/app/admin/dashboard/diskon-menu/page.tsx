@@ -18,7 +18,7 @@ const BASE_URL = "https://ukk-p2.smktelkom-mlg.sch.id/api/";
 const MAKER_ID = "1";
 
 type MenuApiItem = {
-  id: number | null;
+  id: number | null; // bisa id relasi / atau null (tergantung endpoint)
   nama_makanan: string;
   harga: number;
   jenis: "makanan" | "minuman" | string;
@@ -26,7 +26,10 @@ type MenuApiItem = {
   deskripsi?: string | null;
   id_stan?: number | null;
 
-  id_menu: number; // ✅ ini yang dipakai
+  // ✅ ini yang dipakai buat attach
+  id_menu: number;
+
+  // kadang ada, kadang tidak (tergantung endpoint)
   nama_diskon: string | null;
   persentase_diskon: number | null;
   tanggal_awal: string | null;
@@ -40,7 +43,7 @@ type DiskonWithMenu = {
   persentase_diskon: number;
   tanggal_awal: string;
   tanggal_akhir: string;
-  menu_diskon: MenuApiItem[]; // dari backend (bisa kosong)
+  menu_diskon: MenuApiItem[];
 };
 
 type ApiRes<T> = {
@@ -61,7 +64,6 @@ function pickToken(session: any) {
 function imgUrl(path: string | null) {
   if (!path) return null;
   if (path.startsWith("http")) return path;
-  // response: "images/xxxx.png"
   return `https://ukk-p2.smktelkom-mlg.sch.id/${path}`;
 }
 
@@ -82,6 +84,14 @@ function formatDateTime(s: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(d);
+}
+
+// ✅ hitung harga setelah diskon di frontend
+function calcAfterDiscount(price: number, percent: number) {
+  const p = Math.max(0, Math.min(100, Number(percent || 0)));
+  const after = Math.round(price - price * (p / 100));
+  const saved = Math.max(0, price - after);
+  return { after, saved };
 }
 
 export default function DiskonMenuPage() {
@@ -119,7 +129,7 @@ export default function DiskonMenuPage() {
     setDiskonLoading(true);
     try {
       const fd = new FormData();
-      fd.append("search", ""); // sesuai docs
+      fd.append("search", "");
 
       const res = await fetch(`${BASE_URL}getmenudiskon`, {
         method: "POST",
@@ -143,6 +153,8 @@ export default function DiskonMenuPage() {
       arr.sort((a, b) => b.id - a.id);
 
       setDiskonList(arr);
+
+      // auto pilih diskon pertama kalau belum ada pilihan
       if (!selectedDiskonId && arr.length > 0) setSelectedDiskonId(arr[0].id);
 
       // kalau diskon yg dipilih hilang, pindah ke pertama
@@ -187,7 +199,7 @@ export default function DiskonMenuPage() {
 
       const arr = Array.isArray(data?.data) ? data!.data : [];
 
-      // opsional: yang belum diskon muncul dulu
+      // yang belum diskon muncul dulu
       arr.sort((a, b) => Number(!!a.id_diskon) - Number(!!b.id_diskon));
 
       setMenuItems(arr);
@@ -200,7 +212,7 @@ export default function DiskonMenuPage() {
     }
   }
 
-  // ✅ FIX: pakai endpoint TAMBAH MENU DISKON (bukan update)
+  // ✅ tambah menu diskon pakai endpoint yang benar: insert_menu_diskon
   async function attachMenuToDiskon(menu: MenuApiItem) {
     setErr("");
     if (!token) return setErr("Token admin/stan tidak ditemukan.");
@@ -215,7 +227,7 @@ export default function DiskonMenuPage() {
       fd.append("id_diskon", String(selectedDiskonId));
       fd.append("id_menu", String(id_menu));
 
-      const res = await fetch(`${BASE_URL}tambahmenudiskon`, {
+      const res = await fetch(`${BASE_URL}insert_menu_diskon`, {
         method: "POST",
         headers: {
           makerID: MAKER_ID,
@@ -233,10 +245,10 @@ export default function DiskonMenuPage() {
 
       alert(data?.message ?? "Menu berhasil ditambahkan ke diskon ✅");
 
-      // reload diskon + menu_diskon agar langsung muncul
+      // reload agar menu_diskon muncul di atas
       await loadDiskonWithMenu();
 
-      // refresh search list biar status diskonnya update
+      // update list hasil search agar terlihat "sudah diskon"
       setMenuItems((prev) =>
         prev.map((x) =>
           x.id_menu === id_menu
@@ -384,7 +396,7 @@ export default function DiskonMenuPage() {
           Menu yang Sudah Masuk Diskon
         </div>
         <div className="text-xs font-semibold text-slate-500">
-          Diambil dari <b>menu_diskon</b> pada diskon terpilih.
+          Data diambil dari <b>menu_diskon</b> pada diskon terpilih.
         </div>
 
         {!selectedDiskon ? (
@@ -398,7 +410,12 @@ export default function DiskonMenuPage() {
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {selectedDiskon.menu_diskon.map((m, idx) => (
-              <MenuCard key={`${m.id_menu}-${idx}`} item={m} />
+              <MenuCard
+                key={`${m.id_menu}-${idx}`}
+                item={m}
+                diskonName={selectedDiskon.nama_diskon}
+                diskonPercent={selectedDiskon.persentase_diskon}
+              />
             ))}
           </div>
         )}
@@ -480,6 +497,10 @@ export default function DiskonMenuPage() {
               const disabled = !selectedDiskonId;
               const isAdding = addingId === m.id_menu;
 
+              const showName = m.nama_diskon ?? "—";
+              const showPercent = m.persentase_diskon ?? 0;
+              const { after, saved } = calcAfterDiscount(Number(m.harga || 0), Number(showPercent || 0));
+
               return (
                 <div
                   key={`${m.id_menu}-${idx}`}
@@ -507,15 +528,34 @@ export default function DiskonMenuPage() {
                       <div className="mt-1 text-xs font-semibold text-slate-500">
                         ID Menu: <b className="text-slate-700">{m.id_menu}</b>
                       </div>
-                      <div className="mt-1 text-sm font-extrabold text-slate-900">
-                        {formatRupiah(Number(m.harga))}
+
+                      <div className="mt-2 flex items-end justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-bold text-slate-500">Harga</div>
+                          <div className="text-sm font-extrabold text-slate-900">
+                            {formatRupiah(Number(m.harga))}
+                          </div>
+                        </div>
+                        {already ? (
+                          <div className="text-right">
+                            <div className="text-[11px] font-bold text-slate-500">Setelah Diskon</div>
+                            <div className="text-sm font-extrabold text-red-600">
+                              {formatRupiah(after)}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
 
                   {already ? (
                     <div className="mt-3 rounded-2xl bg-amber-50 p-3 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                      Sudah punya diskon: <b>{m.nama_diskon ?? "—"}</b> ({m.persentase_diskon ?? 0}%)
+                      Sudah punya diskon: <b>{showName}</b> ({showPercent}%)
+                      {saved > 0 ? (
+                        <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold text-amber-700 ring-1 ring-amber-200">
+                          Hemat {formatRupiah(saved)}
+                        </span>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-100">
@@ -542,7 +582,19 @@ export default function DiskonMenuPage() {
   );
 }
 
-function MenuCard({ item }: { item: MenuApiItem }) {
+function MenuCard({
+  item,
+  diskonName,
+  diskonPercent,
+}: {
+  item: MenuApiItem;
+  diskonName: string;
+  diskonPercent: number;
+}) {
+  const price = Number(item.harga || 0);
+  const percent = Number(diskonPercent || 0);
+  const { after, saved } = calcAfterDiscount(price, percent);
+
   return (
     <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4">
       <div className="flex gap-3">
@@ -565,12 +617,28 @@ function MenuCard({ item }: { item: MenuApiItem }) {
           <div className="mt-1 text-xs font-semibold text-slate-500">
             ID Menu: <b className="text-slate-700">{item.id_menu}</b>
           </div>
-          <div className="mt-1 text-sm font-extrabold text-slate-900">{formatRupiah(item.harga)}</div>
+
+          <div className="mt-2 flex items-end justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-bold text-slate-500">Harga</div>
+              <div className="text-sm font-extrabold text-slate-900">{formatRupiah(price)}</div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-[11px] font-bold text-slate-500">Setelah Diskon</div>
+              <div className="text-sm font-extrabold text-red-600">{formatRupiah(after)}</div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="mt-3 rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-700 ring-1 ring-red-100">
-        Diskon: <b>{item.nama_diskon ?? "—"}</b> ({item.persentase_diskon ?? 0}%)
+        Diskon: <b>{diskonName}</b> ({diskonPercent}%)
+        {saved > 0 ? (
+          <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold text-red-600 ring-1 ring-red-200">
+            Hemat {formatRupiah(saved)}
+          </span>
+        ) : null}
       </div>
     </div>
   );
